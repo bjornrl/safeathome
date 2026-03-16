@@ -45,7 +45,12 @@ export function InsightCard({ insight }: { insight: InsightWithDetails }) {
           {insight.author_name}
           {insight.author_institution && ` · ${insight.author_institution}`}
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-2">
+          {insight.attachment_count > 0 && (
+            <span className="flex items-center gap-0.5" title={`${insight.attachment_count} attachment${insight.attachment_count > 1 ? 's' : ''}`}>
+              📎 {insight.attachment_count}
+            </span>
+          )}
           {insight.comment_count > 0 && <span>{insight.comment_count} comments</span>}
         </span>
       </div>

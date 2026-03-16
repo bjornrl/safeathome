@@ -20,20 +20,23 @@ export default function InsightsPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from('insights')
-        .select('*, profiles!insights_author_id_fkey(full_name, institution), comments(count)')
+        .select('*, profiles!insights_author_id_fkey(full_name, institution), comments(count), attachments(count)')
         .order('created_at', { ascending: false });
 
       if (data) {
         const mapped: InsightWithDetails[] = data.map((row) => {
           const profile = row.profiles as unknown as { full_name: string | null; institution: string | null } | null;
           const commentAgg = row.comments as unknown as { count: number }[];
+          const attachmentAgg = row.attachments as unknown as { count: number }[];
           return {
             ...row,
             profiles: undefined,
             comments: undefined,
+            attachments: undefined,
             author_name: profile?.full_name ?? null,
             author_institution: profile?.institution as InsightWithDetails['author_institution'] ?? null,
             comment_count: commentAgg?.[0]?.count ?? 0,
+            attachment_count: attachmentAgg?.[0]?.count ?? 0,
           };
         });
         setInsights(mapped);

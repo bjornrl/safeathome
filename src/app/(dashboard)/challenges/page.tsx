@@ -17,7 +17,7 @@ export default function ChallengesPage() {
       const { data } = await supabase
         .from('challenges')
         .select(
-          '*, profiles!challenges_created_by_fkey(full_name, institution), challenge_participants(count), challenge_insights(count), comments(count)'
+          '*, profiles!challenges_created_by_fkey(full_name, institution), challenge_participants(count), challenge_insights(count), comments(count), challenge_transitions(count)'
         )
         .order('created_at', { ascending: false });
 
@@ -27,17 +27,20 @@ export default function ChallengesPage() {
           const participantsAgg = row.challenge_participants as unknown as { count: number }[];
           const insightsAgg = row.challenge_insights as unknown as { count: number }[];
           const commentsAgg = row.comments as unknown as { count: number }[];
+          const transitionsAgg = row.challenge_transitions as unknown as { count: number }[];
           return {
             ...row,
             profiles: undefined,
             challenge_participants: undefined,
             challenge_insights: undefined,
             comments: undefined,
+            challenge_transitions: undefined,
             creator_name: profile?.full_name ?? null,
             creator_institution: profile?.institution as ChallengeWithDetails['creator_institution'] ?? null,
             participant_count: participantsAgg?.[0]?.count ?? 0,
             insight_count: insightsAgg?.[0]?.count ?? 0,
             comment_count: commentsAgg?.[0]?.count ?? 0,
+            transition_count: transitionsAgg?.[0]?.count ?? 0,
           };
         });
         setChallenges(mapped);

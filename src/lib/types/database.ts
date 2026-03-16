@@ -99,6 +99,20 @@ export interface ChallengeParticipant {
   joined_at: string;
 }
 
+export interface ChallengeTransition {
+  id: string;
+  challenge_id: string;
+  from_status: ChallengeStatus | null;
+  to_status: ChallengeStatus;
+  summary: string;
+  transitioned_by: string;
+  created_at: string;
+}
+
+export interface ChallengeTransitionWithAuthor extends ChallengeTransition {
+  author_name: string | null;
+}
+
 // Insert types (omit auto-generated fields)
 export type ProfileInsert = Omit<Profile, 'created_at' | 'updated_at'>;
 export type InsightInsert = Omit<Insight, 'id' | 'created_at' | 'updated_at'>;
@@ -110,6 +124,7 @@ export interface InsightWithDetails extends Insight {
   author_name: string | null;
   author_institution: Institution | null;
   comment_count: number;
+  attachment_count: number;
 }
 
 export interface ChallengeWithDetails extends Challenge {
@@ -118,6 +133,7 @@ export interface ChallengeWithDetails extends Challenge {
   participant_count: number;
   insight_count: number;
   comment_count: number;
+  transition_count: number;
 }
 
 export interface CommentWithAuthor extends Comment {

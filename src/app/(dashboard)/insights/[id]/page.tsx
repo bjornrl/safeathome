@@ -1,49 +1,71 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { DotBadge, Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CommentThread } from '@/components/comments/comment-thread';
-import { WP_CONFIG, MATERIAL_TYPE_LABELS } from '@/lib/constants';
-import type { InsightWithDetails } from '@/lib/types/database';
+import { AttachmentGallery } from '@/components/insights/attachment-gallery';
+import { LinkChallengeDrawer } from '@/components/insights/link-challenge-drawer';
+import { WP_CONFIG, MATERIAL_TYPE_LABELS, STATUS_CONFIG } from '@/lib/constants';
+import type { InsightWithDetails, Challenge } from '@/lib/types/database';
 
 export default function InsightDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [insight, setInsight] = useState<InsightWithDetails | null>(null);
+  const [linkedChallenges, setLinkedChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id ?? null);
+
+    const { data } = await supabase
+      .from('insights')
+      .select('*, profiles!insights_author_id_fkey(full_name, institution), comments(count), attachments(count)')
+      .eq('id', id)
+      .single();
+
+    if (data) {
+      const profile = data.profiles as unknown as { full_name: string | null; institution: string | null } | null;
+      const commentAgg = data.comments as unknown as { count: number }[];
+      const attachmentAgg = data.attachments as unknown as { count: number }[];
+      setInsight({
+        ...data,
+        profiles: undefined,
+        comments: undefined,
+        attachments: undefined,
+        author_name: profile?.full_name ?? null,
+        author_institution: profile?.institution as InsightWithDetails['author_institution'] ?? null,
+        comment_count: commentAgg?.[0]?.count ?? 0,
+        attachment_count: attachmentAgg?.[0]?.count ?? 0,
+      });
+    }
+
+    // Fetch linked challenges
+    const { data: links } = await supabase
+      .from('challenge_insights')
+      .select('challenge_id, challenges(*)')
+      .eq('insight_id', id);
+
+    if (links) {
+      const challenges = links
+        .map((l) => l.challenges as unknown as Challenge)
+        .filter(Boolean);
+      setLinkedChallenges(challenges);
+    }
+
+    setLoading(false);
+  }, [id]);
 
   useEffect(() => {
-    const fetch = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id ?? null);
-
-      const { data } = await supabase
-        .from('insights')
-        .select('*, profiles!insights_author_id_fkey(full_name, institution), comments(count)')
-        .eq('id', id)
-        .single();
-
-      if (data) {
-        const profile = data.profiles as unknown as { full_name: string | null; institution: string | null } | null;
-        const commentAgg = data.comments as unknown as { count: number }[];
-        setInsight({
-          ...data,
-          profiles: undefined,
-          comments: undefined,
-          author_name: profile?.full_name ?? null,
-          author_institution: profile?.institution as InsightWithDetails['author_institution'] ?? null,
-          comment_count: commentAgg?.[0]?.count ?? 0,
-        });
-      }
-      setLoading(false);
-    };
-    fetch();
-  }, [id]);
+    fetchData();
+  }, [fetchData]);
 
   const toggleFlag = async () => {
     if (!insight || !currentUserId) return;
@@ -64,6 +86,16 @@ export default function InsightDetailPage() {
       flagged_by: newFlagged ? currentUserId : null,
       flagged_at: newFlagged ? new Date().toISOString() : null,
     });
+  };
+
+  const unlinkChallenge = async (challengeId: string) => {
+    const supabase = createClient();
+    await supabase
+      .from('challenge_insights')
+      .delete()
+      .eq('challenge_id', challengeId)
+      .eq('insight_id', id);
+    setLinkedChallenges(linkedChallenges.filter((c) => c.id !== challengeId));
   };
 
   if (loading) {
@@ -117,6 +149,9 @@ export default function InsightDetailPage() {
 
         <p className="text-sm text-text leading-relaxed whitespace-pre-wrap">{insight.body}</p>
 
+        {/* Attachments */}
+        <AttachmentGallery insightId={id} />
+
         {insight.tags && insight.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-2">
             {insight.tags.map((tag) => (
@@ -142,7 +177,60 @@ export default function InsightDetailPage() {
         </div>
       </div>
 
+      {/* Linked Challenges */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-lg font-semibold">
+            Linked Challenges ({linkedChallenges.length})
+          </h3>
+          <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(true)}>
+            Link to Challenge
+          </Button>
+        </div>
+        {linkedChallenges.length === 0 ? (
+          <p className="text-sm text-text-muted">Not linked to any challenges yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {linkedChallenges.map((challenge) => {
+              const config = STATUS_CONFIG[challenge.status];
+              return (
+                <div
+                  key={challenge.id}
+                  className="bg-surface border border-border-light rounded-[var(--radius-md)] p-3 flex items-center gap-3"
+                >
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => router.push(`/challenges/${challenge.id}`)}
+                  >
+                    <h4 className="text-sm font-medium text-text">{challenge.title}</h4>
+                    <Badge color={config.color} bg={config.bg} className="mt-1">
+                      {config.label}
+                    </Badge>
+                  </div>
+                  <button
+                    onClick={() => unlinkChallenge(challenge.id)}
+                    className="text-xs text-text-light hover:text-red-500 cursor-pointer transition-colors flex-shrink-0 px-2 py-1"
+                    title="Unlink challenge"
+                  >
+                    Unlink
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <CommentThread insightId={id} />
+
+      {/* Link Challenge Drawer */}
+      <LinkChallengeDrawer
+        insightId={id}
+        linkedChallengeIds={linkedChallenges.map((c) => c.id)}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onLinked={() => fetchData()}
+      />
     </div>
   );
 }

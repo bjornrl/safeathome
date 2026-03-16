@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { FileUpload } from '@/components/insights/file-upload';
+import type { FileWithPreview } from '@/components/insights/file-upload';
 import {
   WORK_PACKAGES,
   FIELD_SITES,
@@ -22,8 +24,10 @@ export default function NewInsightPage() {
   const [fieldSite, setFieldSite] = useState('');
   const [materialType, setMaterialType] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,24 +47,63 @@ export default function NewInsightPage() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const { error: insertError } = await supabase.from('insights').insert({
-      title,
-      body,
-      author_id: user.id,
-      work_package: workPackage || null,
-      field_site: fieldSite || null,
-      material_type: materialType || null,
-      tags: tags.length > 0 ? tags : null,
-      flagged_for_design: false,
-    });
+    // 1. Insert insight
+    const { data: insight, error: insertError } = await supabase
+      .from('insights')
+      .insert({
+        title,
+        body,
+        author_id: user.id,
+        work_package: workPackage || null,
+        field_site: fieldSite || null,
+        material_type: materialType || null,
+        tags: tags.length > 0 ? tags : null,
+        flagged_for_design: false,
+      })
+      .select('id')
+      .single();
 
-    if (insertError) {
-      setError(insertError.message);
+    if (insertError || !insight) {
+      setError(insertError?.message ?? 'Failed to create insight.');
       setSubmitting(false);
       return;
     }
 
-    router.push('/insights');
+    // 2. Upload files
+    if (files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        setUploadProgress(`Uploading file ${i + 1} of ${files.length}...`);
+
+        const storagePath = `${user.id}/${insight.id}/${f.file.name}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('attachments')
+          .upload(storagePath, f.file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          continue;
+        }
+
+        // 3. Insert attachment record
+        await supabase.from('attachments').insert({
+          insight_id: insight.id,
+          file_name: f.file.name,
+          file_type: f.file.type,
+          file_size: f.file.size,
+          storage_path: storagePath,
+          uploaded_by: user.id,
+        });
+      }
+    }
+
+    // Clean up preview URLs
+    files.forEach((f) => {
+      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+    });
+
+    router.push(`/insights/${insight.id}`);
   };
 
   return (
@@ -122,9 +165,17 @@ export default function NewInsightPage() {
           placeholder="Comma-separated tags, e.g. housing, elderly, Oslo"
         />
 
+        <FileUpload files={files} setFiles={setFiles} />
+
         {error && (
           <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-[var(--radius-sm)]">
             {error}
+          </p>
+        )}
+
+        {uploadProgress && submitting && (
+          <p className="text-sm text-teal bg-teal/5 px-3 py-2 rounded-[var(--radius-sm)]">
+            {uploadProgress}
           </p>
         )}
 
@@ -133,7 +184,7 @@ export default function NewInsightPage() {
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Creating...' : 'Create Insight'}
+            {submitting ? (uploadProgress || 'Creating...') : 'Create Insight'}
           </Button>
         </div>
       </form>
