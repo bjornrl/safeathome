@@ -38,3 +38,12 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading), Georgia, serif;
 }
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.25s ease-out;
+}
