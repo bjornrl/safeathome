@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation';
 
 const navItems = [
   { href: '/explore', label: 'Explore' },
+  { href: '/frictions', label: 'Frictions' },
+  { href: '/qualities', label: 'Qualities' },
   { href: '/insights', label: 'Insights' },
+  { href: '/solutions', label: 'Solutions' },
   { href: '/about', label: 'About' },
-  { href: '/reading-room', label: 'Reading Room' },
-  { href: '/for-municipalities', label: 'For Municipalities' },
 ];
 
 export function PublicNav() {

@@ -27,7 +27,20 @@ export interface FrictionCategory {
 export interface QualityCategory {
   id: QualityType;
   label: string;
+  color: string;
   description: string;
+}
+
+export type SolutionStage = 'mapping' | 'ideation' | 'prototyping' | 'testing' | 'implementing';
+
+export interface DesignResponse {
+  id: string;
+  title: string;
+  description: string;
+  stage: SolutionStage;
+  frictions: FrictionType[];
+  outcome: string | null;
+  source_stories: string[];
 }
 
 export interface StoryNode {
@@ -53,14 +66,14 @@ export const FRICTIONS: FrictionCategory[] = [
 ];
 
 export const QUALITIES: QualityCategory[] = [
-  { id: 'transnational_flow', label: 'Transnational flow', description: 'Maintaining connections across national borders' },
-  { id: 'household_choreography', label: 'Household choreography', description: 'Coordinating daily routines within shared spaces' },
-  { id: 'invisible_labor', label: 'Invisible labor', description: 'Unrecognized care work sustaining families' },
-  { id: 'cultural_anchoring', label: 'Cultural anchoring', description: 'Preserving cultural identity through daily practices' },
-  { id: 'adaptive_resistance', label: 'Adaptive resistance', description: 'Finding ways to maintain autonomy within systems' },
-  { id: 'intergenerational_exchange', label: 'Intergenerational exchange', description: 'Knowledge and care flowing between generations' },
-  { id: 'digital_bridging', label: 'Digital bridging', description: 'Using technology to connect across distance' },
-  { id: 'belonging_negotiation', label: 'Belonging negotiation', description: 'Navigating identity between places and cultures' },
+  { id: 'transnational_flow', label: 'Transnational flow', color: '#5B6AAF', description: 'Care circulating across borders' },
+  { id: 'household_choreography', label: 'Household choreography', color: '#C45D3E', description: 'Daily orchestration of multi-use spaces' },
+  { id: 'invisible_labor', label: 'Invisible labor', color: '#8B6914', description: 'Unpaid care by relatives and community' },
+  { id: 'cultural_anchoring', label: 'Cultural anchoring', color: '#3A8A7D', description: 'Practices sustaining identity' },
+  { id: 'adaptive_resistance', label: 'Adaptive resistance', color: '#9B59B6', description: 'Quietly working around services' },
+  { id: 'intergenerational_exchange', label: 'Intergenerational exchange', color: '#D4A017', description: 'Bidirectional care between old and young' },
+  { id: 'digital_bridging', label: 'Digital bridging', color: '#2D6A4F', description: 'Technology maintaining connections' },
+  { id: 'belonging_negotiation', label: 'Belonging negotiation', color: '#D14343', description: 'Tension between here and there' },
 ];
 
 export const FRICTION_MAP: Record<FrictionType, FrictionCategory> =
@@ -355,5 +368,102 @@ export const SEED_STORIES: StoryNode[] = [
     lng: 10.865,
     lat: 59.945,
     connections: ['story-5', 'story-21'],
+  },
+];
+
+export const STORY_MAP: Record<string, StoryNode> =
+  Object.fromEntries(SEED_STORIES.map((s) => [s.id, s])) as Record<string, StoryNode>;
+
+export const QUALITY_MAP: Record<QualityType, QualityCategory> =
+  Object.fromEntries(QUALITIES.map((q) => [q.id, q])) as Record<QualityType, QualityCategory>;
+
+export const SOLUTION_STAGES: { id: SolutionStage; label: string; color: string }[] = [
+  { id: 'mapping', label: 'Mapping', color: '#5B6AAF' },
+  { id: 'ideation', label: 'Ideation', color: '#3A8A7D' },
+  { id: 'prototyping', label: 'Prototyping', color: '#C45D3E' },
+  { id: 'testing', label: 'Testing', color: '#8B6914' },
+  { id: 'implementing', label: 'Implementing', color: '#2D6A4F' },
+];
+
+export const SEED_SOLUTIONS: DesignResponse[] = [
+  {
+    id: 'sol-1',
+    title: 'Guest mode for security alarms',
+    description:
+      'Prototyping a configurable setting that adjusts motion sensor sensitivity during family visits, without compromising safety protocols.',
+    stage: 'prototyping',
+    frictions: ['script', 'displace'],
+    outcome: null,
+    source_stories: ['story-8', 'story-2'],
+  },
+  {
+    id: 'sol-2',
+    title: 'Extended dietary care profiles',
+    description:
+      'Co-designing care profiles with families that go beyond medical categories — capturing cultural food practices, preferred preparations, and family cooking schedules.',
+    stage: 'ideation',
+    frictions: ['reduce', 'rotate'],
+    outcome: null,
+    source_stories: ['story-4', 'story-16'],
+  },
+  {
+    id: 'sol-3',
+    title: 'Family care dashboard for transnational relatives',
+    description:
+      'A lightweight interface giving remote family members appropriate visibility into care plans and the ability to contribute observations.',
+    stage: 'mapping',
+    frictions: ['invisible', 'exclude'],
+    outcome: null,
+    source_stories: ['story-3', 'story-11'],
+  },
+  {
+    id: 'sol-4',
+    title: 'Multilingual emergency response protocol',
+    description:
+      'Developing a language-detection system for emergency call lines that routes callers to interpreters within 30 seconds, with pre-recorded reassurance in 12 languages.',
+    stage: 'prototyping',
+    frictions: ['exclude', 'rotate'],
+    outcome: null,
+    source_stories: ['story-22', 'story-24'],
+  },
+  {
+    id: 'sol-5',
+    title: 'Community care recognition toolkit',
+    description:
+      'A framework for municipalities to identify, acknowledge, and support informal care networks — like the Somali women\'s meal delivery — without bureaucratizing them.',
+    stage: 'mapping',
+    frictions: ['invisible', 'reduce'],
+    outcome: null,
+    source_stories: ['story-18', 'story-6'],
+  },
+  {
+    id: 'sol-6',
+    title: 'Continuity matching algorithm',
+    description:
+      'A scheduling tool that prioritizes relational continuity by matching care workers to households based on language, cultural familiarity, and visit history.',
+    stage: 'ideation',
+    frictions: ['rotate', 'isolate'],
+    outcome: null,
+    source_stories: ['story-1', 'story-9'],
+  },
+  {
+    id: 'sol-7',
+    title: 'Cross-district care passport',
+    description:
+      'A portable digital care record that follows the patient across municipal boundaries, eliminating the need to restart assessments when moving between districts.',
+    stage: 'testing',
+    frictions: ['exclude', 'script'],
+    outcome: 'Pilot running in Alna and Søndre Nordstrand with 15 participants.',
+    source_stories: ['story-10', 'story-5'],
+  },
+  {
+    id: 'sol-8',
+    title: 'Prayer-aware sensor scheduling',
+    description:
+      'Configurable time windows in motion sensors that account for regular prayer schedules, reducing false alarms while maintaining safety monitoring.',
+    stage: 'testing',
+    frictions: ['displace', 'script'],
+    outcome: 'Technical prototype validated with three households.',
+    source_stories: ['story-8', 'story-20'],
   },
 ];

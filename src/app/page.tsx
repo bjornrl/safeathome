@@ -35,6 +35,42 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Four ways to explore */}
+        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-surface">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-heading font-semibold text-text text-center mb-10">
+              Four ways to explore
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { href: '/explore', title: 'Explore the map', desc: 'Navigate from bedroom to city hall', color: '#3A8A7D', icon: 'M3 7l6-4 6 4 6-4v12l-6 4-6-4-6 4z' },
+                { href: '/frictions', title: 'Care frictions', desc: 'How systemic mechanisms interrelate', color: '#9B59B6', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zM8 12a4 4 0 108 0 4 4 0 00-8 0' },
+                { href: '/qualities', title: 'Care qualities', desc: 'How people actually live and cope', color: '#5B6AAF', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
+                { href: '/solutions', title: 'Design solutions', desc: 'From observation to intervention', color: '#2D6A4F', icon: 'M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group bg-canvas border border-border-light rounded-[var(--radius-lg)] p-5 hover:border-border transition-colors"
+                >
+                  <div
+                    className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center mb-4"
+                    style={{ backgroundColor: item.color + '18' }}
+                  >
+                    <svg width="20" height="20" fill="none" stroke={item.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d={item.icon} />
+                    </svg>
+                  </div>
+                  <h3 className="font-body font-semibold text-sm text-text group-hover:text-accent transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-xs font-heading text-text-muted">{item.desc}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* About the project */}
         <section className="px-4 sm:px-6 py-16 sm:py-20 bg-surface">
           <div className="max-w-3xl mx-auto">
